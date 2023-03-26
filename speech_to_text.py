@@ -1,35 +1,58 @@
 import io
 import os
-import wave
-from pydub import AudioSegment
-from google.cloud import speech_v1p1beta1 as speech
+from google.cloud import speech
 from google.cloud import storage
-
+import subprocess
 
 # Set up Google Cloud Speech-to-Text API credentials
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'google_secret_key.json'
 
-# Set up the client and config for the API request
+# Set up audio file path
+audio_uri = "audio_1.mp3"
+# gs://discord_speech_to_text/audio_1.mp3
+
+# Use FFmpeg to convert audio file to LINEAR16 encoding format
+subprocess.run(['ffmpeg', '-i', audio_uri, '-acodec', 'pcm_s16le', '-ac', '1', '-ar', '16000', 'audio.wav'], check=True)
+
+
+# Upload the converted audio file to Google Cloud Storage
+storage_client = storage.Client()
+bucket_name = 'discord_speech_to_text'
+bucket = storage_client.bucket(bucket_name)
+blob = bucket.blob('audio.wav')
+blob.upload_from_filename('audio.wav')
+
+# Create client object
 client = speech.SpeechClient()
-config = speech.RecognitionConfig(
+
+# Define audio file configuration
+audio_config = speech.RecognitionConfig(
     encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
-    sample_rate_hertz=44100,
-    # audio_channel_count=2,
+    sample_rate_hertz=16000,
     language_code='en-US',
+    enable_automatic_punctuation=True,
+    audio_channel_count=1,
 )
 
-# Load the WAV file and convert it to LINEAR16 format
-audio = AudioSegment.from_wav('OSR_us_000_0010_8k.wav')
-audio = audio.set_channels(1)  # set to mono channel
-audio = audio.set_frame_rate(44100)  # set to 44.1kHz
-audio = audio.set_sample_width(2)  # set to 16-bit
-raw_audio = audio.raw_data
+# Define recognition job configuration
+job_config = speech.LongRunningRecognizeRequest(
+    audio=speech.RecognitionAudio(uri='gs://' + bucket_name + '/audio.wav'),
+    config=audio_config,
+)
 
-# Prepare the API request with the LINEAR16 audio data
-audio = speech.RecognitionAudio(content=raw_audio)
+# Start recognition job
+operation = client.long_running_recognize(request=job_config)
 
-# Make the API request and print the transcription
-response = client.recognize(config=config, audio=audio)
+# Wait for recognition job to complete
+response = operation.result()
+
+# Get transcribed text from response
+transcription = ''
 for result in response.results:
-    print('Transcript: {}'.format(result.alternatives[0].transcript))
+    transcription += result.alternatives[0].transcript
 
+# Print transcribed text
+print(transcription)
+
+# Delete the converted audio file from local storage
+os.remove('audio.wav')
