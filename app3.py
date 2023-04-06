@@ -89,6 +89,14 @@ async def stop_rec(ctx):
 async def rec_time(ctx):
     await ctx.send("Recording time: {}".format(time.time() - t0))
 
+@bot.command()
+async def test(ctx):
+    get_chan = "general_transcript"
+    for chan_i in bot.get_all_channels():
+        if chan_i.name == get_chan:
+            chan_id = chan_i.id
+    chan_obj = bot.get_channel(chan_id)
+    await chan_obj.send("You have tested poting in a channel")
 
 def transcribe_audio():
     # Set up audio files directory
