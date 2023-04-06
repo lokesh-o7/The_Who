@@ -54,7 +54,7 @@ async def start_rec(ctx):  # If you're using commands.Bot, this will also work.
         await channel.send(f"finished recording audio for: {', '.join(recorded_users)}.",
                            files=files)  # Send a message with the accumulated files.
 
-        transcribe_audio()
+        await transcribe_and_send_to_discord()
 
     voice = ctx.author.voice
 
@@ -98,9 +98,18 @@ async def test(ctx):
     chan_obj = bot.get_channel(chan_id)
     await chan_obj.send("You have tested poting in a channel")
 
-def transcribe_audio():
+async def transcribe_and_send_to_discord():
     # Set up audio files directory
     audio_files_dir = "recordings/"
+     # Define audio file configuration
+    audio_config = speech.RecognitionConfig(
+        encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
+        sample_rate_hertz=16000,
+        language_code='en-US',
+        enable_automatic_punctuation=True,
+        audio_channel_count=1,
+        enable_word_time_offsets=True,
+    )
 
     # Use FFmpeg to convert audio files to LINEAR16 encoding format and upload to Google Cloud Storage
     for audio_file_name in os.listdir(audio_files_dir):
@@ -117,16 +126,6 @@ def transcribe_audio():
             bucket = storage_client.bucket(bucket_name)
             blob = bucket.blob(audio_file_name.replace(".mp3", ".wav"))
             blob.upload_from_filename('audio.wav')
-
-            # Define audio file configuration
-            audio_config = speech.RecognitionConfig(
-                encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
-                sample_rate_hertz=16000,
-                language_code='en-US',
-                enable_automatic_punctuation=True,
-                audio_channel_count=1,
-                enable_word_time_offsets=True,
-            )
 
             # Define recognition job configuration
             job_config = speech.LongRunningRecognizeRequest(
@@ -161,7 +160,7 @@ def transcribe_audio():
                 for word_timestamp in word_timestamps:
                     f.write("{}, {:.2f}, {:.2f}\n".format(word_timestamp[0], word_timestamp[1], word_timestamp[2]))
              
-                        # Send transcribed text to Discord channel
+            # Send transcribed text to Discord channel
             get_chan = 'transcripts'
             for chan_i in bot.get_all_channels():
                 if chan_i.name == get_chan:
@@ -177,4 +176,4 @@ def transcribe_audio():
     for filename in os.listdir(audio_files_dir):
         os.remove(os.path.join(audio_files_dir, filename))
 
-bot.run('')
+bot.run('MTA3NzY5MTQyMjA2NjYxMDI3OA.GbgCTO.IRuNfMJwvz-u7tv9UlJqM74ugrENLI9gRIVol4')
