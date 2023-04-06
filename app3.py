@@ -162,20 +162,19 @@ def transcribe_audio():
                     f.write("{}, {:.2f}, {:.2f}\n".format(word_timestamp[0], word_timestamp[1], word_timestamp[2]))
              
                         # Send transcribed text to Discord channel
-            channel = bot.get_channel(
-                1090723696953528361)  # Replace CHANNEL_ID with the actual channel ID
-            message = "Transcription:\n{}\n\nWord Timestamps:\n".format(transcription)
-            for word_timestamp in word_timestamps:
-                message += "{}, {:.2f}, {:.2f}\n".format(word_timestamp[0], word_timestamp[1],
-                                                         word_timestamp[2])
-            channel.send(message)
+            get_chan = 'transcripts'
+            for chan_i in bot.get_all_channels():
+                if chan_i.name == get_chan:
+                    chan_id = chan_i.id
+            chan_obj = bot.get_channel(chan_id)
+            await chan_obj.send(transcription)
+            await chan_obj.send(word_timestamps)
 
             # Delete the converted audio file from local storage
-            os.remove('audio.wav')
+            # os.remove(audio_file_name)
 
-            # delete the transcript recordings
-            for filename in os.listdir(audio_files_dir):
-                os.remove(os.path.join(audio_files_dir, filename))
-
+    # delete the transcript recordings after transcription has done
+    for filename in os.listdir(audio_files_dir):
+        os.remove(os.path.join(audio_files_dir, filename))
 
 bot.run('')
