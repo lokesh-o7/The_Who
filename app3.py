@@ -180,16 +180,16 @@ async def transcribe_and_send_to_discord():
             # Delete the converted audio file from local storage
             # os.remove(audio_file_name)
 
-        # merge transcripts
-        final_transcript = support_scripts.stitch_transcripts(user_transcripts, start_dt)
+    # merge transcripts
+    final_transcript = support_scripts.stitch_transcripts(user_transcripts, start_dt)
 
-        # post transcripts to transcripts channel
-        chan_obj = get_channel_by_name('transcripts')
-        file_path = "final_transcript.txt"
-        with open(file_path, 'w') as fout:
-            fout.write(final_transcript)
-        await chan_obj.send("Transcript: ", file=discord.File(file_path, "final_transcript.txt"))
-        await chan_obj.send(final_transcript)
+    # post transcripts to transcripts channel
+    chan_obj = get_channel_by_name('transcripts')
+    file_path = "final_transcript.txt"
+    with open(file_path, 'w') as fout:
+        fout.write(final_transcript)
+    await chan_obj.send("Transcript: ", file=discord.File(file_path, "final_transcript.txt"))
+    await chan_obj.send(final_transcript)
 
     # delete the transcript recordings after transcription has done
     for filename in os.listdir(audio_files_dir):
