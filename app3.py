@@ -6,18 +6,25 @@ import subprocess
 import io
 from google.cloud import speech
 from google.cloud import storage
+import support_scripts
+import pandas as pd
+from datetime import datetime
 
 intents = discord.Intents.default()
 intents.members = True
 intents.message_content = True
 
 # Set up Google Cloud Speech-to-Text API credentials
-os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'google_secret_key.json'
+this_dir = os.path.dirname(__file__)
+key_path = os.path.join(this_dir, 'google_secret_key.json')
+print(key_path, os.path.exists(key_path))
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = key_path
 
 # bot = discord.Bot(command_prefix='?', intents=intents)
 bot = commands.Bot(command_prefix='?', intents=intents)
 connections = {}
 t0 = 0
+start_dt = None
 t_total = 0
 
 
@@ -29,6 +36,9 @@ async def on_ready():
 
 @bot.command()
 async def start_rec(ctx):  # If you're using commands.Bot, this will also work.
+    global start_dt
+    start_dt = datetime.today()#.strftime('%Y-%m-%d %H:%M:%S')
+    # print(start_dt)
     async def once_done(sink: discord.sinks, channel: discord.TextChannel,
                         *args):  # Our voice client already passes these in.
         recorded_users = [  # A list of recorded users
@@ -44,7 +54,8 @@ async def start_rec(ctx):  # If you're using commands.Bot, this will also work.
             os.makedirs(directory)  # If not, create the directory.
 
         for user_id, audio in sink.audio_data.items():
-            filename = f"{user_id}.{sink.encoding}"
+            user = bot.get_user(user_id)
+            filename = f"{user.name}.{sink.encoding}"
             filepath = os.path.join(directory, filename)
 
             with open(filepath, 'wb') as f:
@@ -112,12 +123,13 @@ async def transcribe_and_send_to_discord():
     )
 
     # Use FFmpeg to convert audio files to LINEAR16 encoding format and upload to Google Cloud Storage
+    user_transcripts = {}
     for audio_file_name in os.listdir(audio_files_dir):
         audio_file_path = os.path.join(audio_files_dir, audio_file_name)
         if audio_file_name.endswith(".mp3"):
             # Convert audio file to LINEAR16 format using FFmpeg
             subprocess.run(
-                ['ffmpeg', '-i', audio_file_path, '-acodec', 'pcm_s16le', '-ac', '1', '-ar', '16000', 'audio.wav'],
+                ['ffmpeg', '-y', '-i', audio_file_path, '-acodec', 'pcm_s16le', '-ac', '1', '-ar', '16000', 'audio.wav'],
                 check=True)
 
             # Upload the converted audio file to Google Cloud Storage
@@ -151,29 +163,36 @@ async def transcribe_and_send_to_discord():
                 for word in result.alternatives[0].words:
                     word_timestamps.append((word.word, word.start_time.total_seconds(), word.end_time.total_seconds()))
 
-            print(transcription)
-            print(word_timestamps)
+            user_name = audio_file_name.split('.')[0]
+            user_transcripts[user_name] = {}
+            user_transcripts[user_name]['text'] = transcription
+            user_transcripts[user_name]['timestamps'] = word_timestamps
+            # print(transcription)
+            # print(word_timestamps)
 
-            # Write transcribed text and word timestamps to a text file
-            with open(audio_file_name.replace(".mp3", ".txt"), "w") as f:
-                f.write("Transcription:\n{}\n\nWord Timestamps:\n".format(transcription))
-                for word_timestamp in word_timestamps:
-                    f.write("{}, {:.2f}, {:.2f}\n".format(word_timestamp[0], word_timestamp[1], word_timestamp[2]))
+            # # Write transcribed text and word timestamps to a text file
+            # with open(audio_file_name.replace(".mp3", ".txt"), "w") as f:
+            #     f.write("Transcription:\n{}\n\nWord Timestamps:\n".format(transcription))
+            #     for word_timestamp in word_timestamps:
+            #         f.write("{}, {:.2f}, {:.2f}\n".format(word_timestamp[0], word_timestamp[1], word_timestamp[2]))
              
-            # Send transcribed text to Discord channel
-            get_chan = 'transcripts'
-            for chan_i in bot.get_all_channels():
-                if chan_i.name == get_chan:
-                    chan_id = chan_i.id
-            chan_obj = bot.get_channel(chan_id)
-            await chan_obj.send(transcription)
-            await chan_obj.send(word_timestamps)
-
             # Delete the converted audio file from local storage
             # os.remove(audio_file_name)
+
+        # start_dt = pd.to_datetime("1-Apr-2023 12:00:00")
+        final_transcript = support_scripts.stitch_transcripts(user_transcripts, start_dt)
+        chan_obj = get_channel_by_name('transcripts')
+        await chan_obj.send(final_transcript)
 
     # delete the transcript recordings after transcription has done
     for filename in os.listdir(audio_files_dir):
         os.remove(os.path.join(audio_files_dir, filename))
 
+def get_channel_by_name(get_chan):
+    # Send transcribed text to Discord channel
+    for chan_i in bot.get_all_channels():
+        if chan_i.name == get_chan:
+            chan_id = chan_i.id
+    return bot.get_channel(chan_id)
+    
 bot.run('MTA3NzY5MTQyMjA2NjYxMDI3OA.GbgCTO.IRuNfMJwvz-u7tv9UlJqM74ugrENLI9gRIVol4')

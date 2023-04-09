@@ -40,7 +40,7 @@ def clip_and_timestamp(mp3_file):
     # stop = 1
 
 MAX_WORDS = 15
-def stitch_transcripts(files):
+def stitch_file_transcripts(data_dict, start_dt):
     files = [r"D:\U00726991\CEG7370_DC\discord_proj\data\user_1.txt",
              r"D:\U00726991\CEG7370_DC\discord_proj\data\user_2.txt"]
     df_all = []
@@ -97,6 +97,50 @@ def stitch_transcripts(files):
     out_file = os.path.join(out_dir, 'merge_script.txt')
     with open(out_file, 'w') as fout:
         fout.writelines(merge_lines)
+
+def stitch_transcripts(data_dict, start_dt):
+    df_all = []
+    # parse out each users transcript into a more useable format
+    for user_name, data in data_dict.items():
+        words, starts, ends, sent_ids = [], [], [], []
+        sent_id = 0 # keep track of each sentence
+        for time_s in data['timestamps']:
+            word, st, end = time_s
+
+            sent_ids.append(sent_id)
+            if '.' in word: # if period is found start new sentence
+                word = word.split('.')[0]
+                sent_id += 1
+                
+            words.append(word)
+            starts.append(st)
+            ends.append(end)
+        
+        df = {'word':words, 'start':starts, 'end':ends, 'sent_id':sent_ids}
+        df = pd.DataFrame(df)
+        df['user'] = user_name
+        df_all.append(df)
+    
+    # sort each sentence by start time
+    df_all = pd.concat(df_all, ignore_index=True)
+    sent_sort = df_all.groupby(['user','sent_id'])['start'].min().reset_index()
+    sent_sort = sent_sort.sort_values('start')
+
+    # merge all sentences in order of start time
+    merge_lines = []
+    for loc, df_row in sent_sort.iterrows():
+        user_id, sent_id = df_row[['user','sent_id']]
+        get_idx = (df_all['user'] == user_id) & (df_all['sent_id'] == sent_id)
+        words = df_all.loc[get_idx, 'word'].tolist()
+        time_s = df_all.loc[get_idx, 'start'].iloc[0]
+        timestamp = start_dt + pd.Timedelta(seconds=time_s)
+        timestamp = timestamp.strftime("%Y-%m-%d %H:%M:%S")
+        sentence = ' '.join(words)
+        sentence = "{}, {} >> {}.".format(user_id, timestamp, sentence)
+        merge_lines.append(sentence)
+    
+    merge_text = '\n'.join(merge_lines)
+    return merge_text
 
 def run_test():
     files = [r"D:\U00726991\CEG7370_DC\discord_proj\data\ylativ.mp3",
