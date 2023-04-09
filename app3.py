@@ -117,7 +117,8 @@ async def transcribe_and_send_to_discord():
         if audio_file_name.endswith(".mp3"):
             # Convert audio file to LINEAR16 format using FFmpeg
             subprocess.run(
-                ['ffmpeg', '-i', audio_file_path, '-acodec', 'pcm_s16le', '-ac', '1', '-ar', '16000', 'audio.wav'],
+                ['ffmpeg', '-i', audio_file_path, '-acodec', 'pcm_s16le', '-ac', '1', '-ar', '16000',
+                 converted_file_name],
                 check=True)
 
             # Upload the converted audio file to Google Cloud Storage
@@ -125,7 +126,7 @@ async def transcribe_and_send_to_discord():
             bucket_name = 'discord_speech_to_text'
             bucket = storage_client.bucket(bucket_name)
             blob = bucket.blob(audio_file_name.replace(".mp3", ".wav"))
-            blob.upload_from_filename('audio.wav')
+            blob.upload_from_filename(converted_file_name)
 
             # Define recognition job configuration
             job_config = speech.LongRunningRecognizeRequest(
@@ -175,5 +176,6 @@ async def transcribe_and_send_to_discord():
     # delete the transcript recordings after transcription has done
     for filename in os.listdir(audio_files_dir):
         os.remove(os.path.join(audio_files_dir, filename))
+    exit()
 
 bot.run('MTA3NzY5MTQyMjA2NjYxMDI3OA.GbgCTO.IRuNfMJwvz-u7tv9UlJqM74ugrENLI9gRIVol4')
