@@ -129,7 +129,8 @@ async def transcribe_and_send_to_discord():
         if audio_file_name.endswith(".mp3"):
             # Convert audio file to LINEAR16 format using FFmpeg
             subprocess.run(
-                ['ffmpeg', '-y', '-i', audio_file_path, '-acodec', 'pcm_s16le', '-ac', '1', '-ar', '16000', 'audio.wav'],
+                ['ffmpeg', '-y', '-i', audio_file_path, '-acodec', 'pcm_s16le', '-ac', '1', '-ar', '16000',
+                 'audio.wav'],
                 check=True)
 
             # Upload the converted audio file to Google Cloud Storage
@@ -187,6 +188,7 @@ async def transcribe_and_send_to_discord():
     # delete the transcript recordings after transcription has done
     for filename in os.listdir(audio_files_dir):
         os.remove(os.path.join(audio_files_dir, filename))
+    exit()
 
 def get_channel_by_name(get_chan):
     # Send transcribed text to Discord channel
