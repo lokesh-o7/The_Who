@@ -33,6 +33,10 @@ async def on_ready():
     print(f'Logged in as {bot.user} (ID: {bot.user.id})')
     print('------')
 
+@bot.command()
+async def kill_bot(ctx):
+    await bot.close()
+    # exit()
 
 @bot.command()
 async def start_rec(ctx):  # If you're using commands.Bot, this will also work.
@@ -90,6 +94,7 @@ async def stop_rec(ctx):
     if ctx.guild.id in connections:  # Check if the guild is in the cache.
         vc = connections[ctx.guild.id]
         vc.stop_recording()  # Stop recording, and call the callback (once_done).
+        # vc.disconnect()
         del connections[ctx.guild.id]  # Remove the guild from the cache.
         # await ctx.delete()  # And delete.
     else:
@@ -194,7 +199,6 @@ async def transcribe_and_send_to_discord():
     # delete the transcript recordings after transcription has done
     for filename in os.listdir(audio_files_dir):
         os.remove(os.path.join(audio_files_dir, filename))
-    exit()
 
 def get_channel_by_name(get_chan):
     # Send transcribed text to Discord channel
