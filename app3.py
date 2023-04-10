@@ -188,7 +188,7 @@ async def transcribe_and_send_to_discord():
     # merge transcripts
     final_transcript = support_scripts.stitch_transcripts(user_transcripts, start_dt)
 
-    # post transcripts to transcripts channel
+    # post transcripts to general channel
     chan_obj = get_channel_by_name('transcripts')
     file_path = "final_transcript.txt"
     with open(file_path, 'w') as fout:
