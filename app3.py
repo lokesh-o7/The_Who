@@ -4,7 +4,7 @@ import time
 import os
 import subprocess
 import io
-from google.cloud import speech
+from google.cloud import speech_v1p1beta1 as speech
 from google.cloud import storage
 import support_scripts
 import pandas as pd
@@ -69,7 +69,7 @@ async def start_rec(ctx):  # If you're using commands.Bot, this will also work.
         await channel.send(f"finished recording audio for: {', '.join(recorded_users)}.",
                            files=files)  # Send a message with the accumulated files.
 
-        await transcribe_and_send_to_discord()
+        await transcribe_and_send_to_discord(ctx)
 
     voice = ctx.author.voice
 
@@ -94,7 +94,7 @@ async def stop_rec(ctx):
     if ctx.guild.id in connections:  # Check if the guild is in the cache.
         vc = connections[ctx.guild.id]
         vc.stop_recording()  # Stop recording, and call the callback (once_done).
-        vc.disconnect()
+        await vc.disconnect()
         del connections[ctx.guild.id]  # Remove the guild from the cache.
         # await ctx.delete()  # And delete.
     else:
@@ -114,7 +114,7 @@ async def test(ctx):
     chan_obj = bot.get_channel(chan_id)
     await chan_obj.send("You have tested poting in a channel")
 
-async def transcribe_and_send_to_discord():
+async def transcribe_and_send_to_discord(ctx):
     # Set up audio files directory
     audio_files_dir = "recordings/"
      # Define audio file configuration
@@ -125,6 +125,7 @@ async def transcribe_and_send_to_discord():
         enable_automatic_punctuation=True,
         audio_channel_count=1,
         enable_word_time_offsets=True,
+        alternative_language_codes=["de"],
     )
 
     # Use FFmpeg to convert audio files to LINEAR16 encoding format and upload to Google Cloud Storage
@@ -145,10 +146,10 @@ async def transcribe_and_send_to_discord():
             blob = bucket.blob(audio_file_name.replace(".mp3", ".wav"))
             blob.upload_from_filename('audio.wav')
 
+            audio=speech.RecognitionAudio(uri='gs://' + bucket_name + '/' + audio_file_name.replace(".mp3", ".wav"))
             # Define recognition job configuration
             job_config = speech.LongRunningRecognizeRequest(
-                audio=speech.RecognitionAudio(
-                    uri='gs://' + bucket_name + '/' + audio_file_name.replace(".mp3", ".wav")),
+                audio=audio,
                 config=audio_config,
             )
 
@@ -157,6 +158,7 @@ async def transcribe_and_send_to_discord():
 
             # Start recognition job
             operation = client.long_running_recognize(request=job_config)
+            # response = client.recognize(config=audio_config, audio=audio)
 
             # Wait for recognition job to complete
             response = operation.result()
@@ -166,6 +168,7 @@ async def transcribe_and_send_to_discord():
             word_timestamps = []
             for result in response.results:
                 transcription += result.alternatives[0].transcript
+                lang = result.language_code
                 for word in result.alternatives[0].words:
                     word_timestamps.append((word.word, word.start_time.total_seconds(), word.end_time.total_seconds()))
 
@@ -173,6 +176,10 @@ async def transcribe_and_send_to_discord():
             user_transcripts[user_name] = {}
             user_transcripts[user_name]['text'] = transcription
             user_transcripts[user_name]['timestamps'] = word_timestamps
+            try:
+                user_transcripts[user_name] ['language'] = lang
+            except:
+                user_transcripts[user_name] ['language'] = "UNK"
             # print(transcription)
             # print(word_timestamps)
 
@@ -189,12 +196,14 @@ async def transcribe_and_send_to_discord():
     final_transcript = support_scripts.stitch_transcripts(user_transcripts, start_dt)
 
     # post transcripts to general channel
-    chan_obj = get_channel_by_name('general')
+    # chan_obj = get_channel_by_name('general')
     file_path = "final_transcript.txt"
     with open(file_path, 'w') as fout:
         fout.write(final_transcript)
-    await chan_obj.send("Transcript: ", file=discord.File(file_path, "final_transcript.txt"))
-    await chan_obj.send(final_transcript)
+    await ctx.send("Transcript: ", file=discord.File(file_path, "final_transcript.txt"))
+    await ctx.send(final_transcript)
+    # await chan_obj.send("Transcript: ", file=discord.File(file_path, "final_transcript.txt"))
+    # await chan_obj.send(final_transcript)
 
     # delete the transcript recordings after transcription has done
     for filename in os.listdir(audio_files_dir):
@@ -207,4 +216,4 @@ def get_channel_by_name(get_chan):
             chan_id = chan_i.id
     return bot.get_channel(chan_id)
     
-bot.run('MTA3NzY5MTQyMjA2NjYxMDI3OA.GbgCTO.IRuNfMJwvz-u7tv9UlJqM74ugrENLI9gRIVol4')
+bot.run('MTA5NTExNjYzNTM5Nzk1OTc0MQ.Ga3UJw.tY2SLAXoh0IY0Hka023Km64_jOxkIa2Joo2l8A')
