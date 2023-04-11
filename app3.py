@@ -201,7 +201,7 @@ async def transcribe_and_send_to_discord(ctx):
     with open(file_path, 'w') as fout:
         fout.write(final_transcript)
     await ctx.send("Transcript: ", file=discord.File(file_path, "final_transcript.txt"))
-    await ctx.send(final_transcript)
+    # await ctx.send(final_transcript)
     # await chan_obj.send("Transcript: ", file=discord.File(file_path, "final_transcript.txt"))
     # await chan_obj.send(final_transcript)
 
