@@ -94,7 +94,7 @@ async def stop_rec(ctx):
     if ctx.guild.id in connections:  # Check if the guild is in the cache.
         vc = connections[ctx.guild.id]
         vc.stop_recording()  # Stop recording, and call the callback (once_done).
-        vc.disconnect()
+        await vc.disconnect()
         del connections[ctx.guild.id]  # Remove the guild from the cache.
         # await ctx.delete()  # And delete.
     else:
