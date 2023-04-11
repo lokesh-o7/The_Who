@@ -136,7 +136,8 @@ def stitch_transcripts(data_dict, start_dt):
         timestamp = start_dt + pd.Timedelta(seconds=time_s)
         timestamp = timestamp.strftime("%Y-%m-%d %H:%M:%S")
         sentence = ' '.join(words)
-        sentence = "{}, {} >> {}.".format(user_id, timestamp, sentence)
+        lang = df_all.loc[get_idx, 'lang'].iloc[0]
+        sentence = "{}, {}, {} >> {}.".format(user_id, timestamp, lang, sentence)
         merge_lines.append(sentence)
     
     merge_text = '\n'.join(merge_lines)
