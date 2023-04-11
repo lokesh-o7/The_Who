@@ -2,10 +2,10 @@ import numpy as np
 import time
 import os
 import pandas as pd
-from pydub import AudioSegment
-from pydub.silence import split_on_silence
-import matplotlib.pyplot as plt
-import pyqtgraph as pg
+# from pydub import AudioSegment
+# from pydub.silence import split_on_silence
+# import matplotlib.pyplot as plt
+# import pyqtgraph as pg
 
 #pydub works in milliseconds: Frames/1000 = s, s * 1000 = Frames
 
