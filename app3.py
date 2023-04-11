@@ -94,7 +94,7 @@ async def stop_rec(ctx):
     if ctx.guild.id in connections:  # Check if the guild is in the cache.
         vc = connections[ctx.guild.id]
         vc.stop_recording()  # Stop recording, and call the callback (once_done).
-        await vc.disconnect()
+        vc.disconnect()
         del connections[ctx.guild.id]  # Remove the guild from the cache.
         # await ctx.delete()  # And delete.
     else:
@@ -177,9 +177,9 @@ async def transcribe_and_send_to_discord(ctx):
             user_transcripts[user_name]['text'] = transcription
             user_transcripts[user_name]['timestamps'] = word_timestamps
             try:
-                user_transcripts[user_name] ['language'] = lang
+                user_transcripts[user_name] ['lang'] = lang
             except:
-                user_transcripts[user_name] ['language'] = "UNK"
+                user_transcripts[user_name] ['lang'] = "UNK"
             # print(transcription)
             # print(word_timestamps)
 

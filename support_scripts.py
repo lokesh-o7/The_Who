@@ -119,6 +119,7 @@ def stitch_transcripts(data_dict, start_dt):
         df = {'word':words, 'start':starts, 'end':ends, 'sent_id':sent_ids}
         df = pd.DataFrame(df)
         df['user'] = user_name
+        df['lang'] = data['lang']
         df_all.append(df)
     
     # sort each sentence by start time
