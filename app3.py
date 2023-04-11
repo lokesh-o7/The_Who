@@ -65,9 +65,9 @@ async def start_rec(ctx):  # If you're using commands.Bot, this will also work.
             with open(filepath, 'wb') as f:
                 f.write(audio.file.read())
 
-            files.append(discord.File(filepath, filename=filename))  # Append the file path to the list.
-        await channel.send(f"finished recording audio for: {', '.join(recorded_users)}.",
-                           files=files)  # Send a message with the accumulated files.
+            # files.append(discord.File(filepath, filename=filename))  # Append the file path to the list.
+        await channel.send(f"finished recording audio for: {', '.join(recorded_users)}.")
+                        #    files=files)  # Send a message with the accumulated files.
 
         await transcribe_and_send_to_discord(ctx)
 
