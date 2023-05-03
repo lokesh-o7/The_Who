@@ -216,4 +216,4 @@ def get_channel_by_name(get_chan):
             chan_id = chan_i.id
     return bot.get_channel(chan_id)
     
-bot.run('MTA5NTExNjYzNTM5Nzk1OTc0MQ.Ga3UJw.tY2SLAXoh0IY0Hka023Km64_jOxkIa2Joo2l8A')
+bot.run('')
