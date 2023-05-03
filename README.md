@@ -1,5 +1,5 @@
 # The_Who
-This Repository is for Distributed Computing Project and for source code, power point presentations
+This Repository is for Discord Speech to text project and for source code.
 
 
 To create a Discord bot that can transcribe speech to text and save it as a file, you can follow these general steps:
